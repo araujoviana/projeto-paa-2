@@ -1,5 +1,5 @@
 // Matheus Gabriel Viana Araujo - 10420444
-// SEU NOME AQUI <--
+// Beatriz Bellini Prado Garcia - 10419741
 
 #include <stdio.h>
 #include <stdlib.h>
