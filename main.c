@@ -73,6 +73,127 @@ void ler_arquivo(FILE *fp, Item **items, enum Fase *fase) {
     }
 }
 
+// PROTOTIPO DE MOCHILA FRACIONARIA
+/**
+ * Implementa o algoritmo da mochila fracionária usando uma abordagem baseada em
+ * programação dinâmica. Esta função implementa uma estratégia híbrida que
+ * combina elementos de programação dinâmica com a natureza contínua da mochila
+ * fracionária.
+ *
+ * @param items Array de itens disponíveis
+ * @param n Número de itens
+ * @param capacidade Capacidade máxima da mochila
+ * @param resultado Array para armazenar a fração de cada item escolhido (deve
+ * ser pré-alocado)
+ * @return Valor total obtido
+ */
+float mochila_fracionaria_pd(Item *items, int n, float capacidade,
+                             float *resultado) {
+    if (items == NULL || resultado == NULL || n <= 0 || capacidade <= 0) {
+        return 0.0f;
+    }
+
+    // Inicializa o array de resultado com zeros
+    for (int i = 0; i < n; i++) {
+        resultado[i] = 0.0f;
+    }
+
+    // Cria uma tabela para armazenar o valor máximo para cada capacidade
+    // Para uma abordagem contínua, usamos discretização da capacidade
+    int max_cap = (int)(capacidade * 100) + 1; // Precisão de 0.01
+    float *dp = (float *)malloc(max_cap * sizeof(float));
+    if (dp == NULL) {
+        printf("Erro ao alocar memória para tabela de programação dinâmica\n");
+        return 0.0f;
+    }
+
+    // Inicializa a tabela com zeros
+    for (int i = 0; i < max_cap; i++) {
+        dp[i] = 0.0f;
+    }
+
+    // Para cada item, calcula o melhor valor para cada capacidade
+    for (int i = 0; i < n; i++) {
+        // Calcula valor por unidade de peso
+        float valor_por_peso = items[i].preco / items[i].peso;
+
+        // Para cada capacidade possível (de maior para menor para evitar
+        // contagem duplicada)
+        for (int w = max_cap - 1; w >= 0; w--) {
+            float cap_atual = w / 100.0f;
+
+            // Quanto deste item podemos levar com a capacidade disponível
+            float peso_maximo =
+                (items[i].peso > cap_atual) ? cap_atual : items[i].peso;
+
+            if (peso_maximo > 0) {
+                float novo_valor = dp[w] + (valor_por_peso * peso_maximo);
+                int nova_cap = (int)((cap_atual - peso_maximo) * 100);
+
+                if (nova_cap >= 0 && dp[nova_cap] + novo_valor > dp[w]) {
+                    float fracao = peso_maximo / items[i].peso;
+                    resultado[i] = fracao;
+                    dp[w] = dp[nova_cap] + (items[i].preco * fracao);
+                }
+            }
+        }
+    }
+
+    // Valor máximo está na última posição da tabela
+    float valor_total = dp[max_cap - 1];
+    free(dp);
+
+    // Reconstrução da solução para garantir os valores corretos no array
+    // resultado
+    float cap_restante = capacidade;
+    memset(resultado, 0, n * sizeof(float));
+
+    // Ordena os itens por valor/peso decrescente (abordagem gulosa)
+    typedef struct {
+        float valor_por_peso;
+        int indice;
+    } ItemOrdenado;
+
+    ItemOrdenado *itens_ordenados =
+        (ItemOrdenado *)malloc(n * sizeof(ItemOrdenado));
+    if (itens_ordenados == NULL) {
+        printf("Erro ao alocar memória para ordenação\n");
+        return valor_total;
+    }
+
+    for (int i = 0; i < n; i++) {
+        itens_ordenados[i].valor_por_peso = items[i].preco / items[i].peso;
+        itens_ordenados[i].indice = i;
+    }
+
+    // Ordenação por valor/peso decrescente
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (itens_ordenados[j].valor_por_peso <
+                itens_ordenados[j + 1].valor_por_peso) {
+                ItemOrdenado temp = itens_ordenados[j];
+                itens_ordenados[j] = itens_ordenados[j + 1];
+                itens_ordenados[j + 1] = temp;
+            }
+        }
+    }
+
+    // Reconstrução da solução
+    for (int i = 0; i < n && cap_restante > 0; i++) {
+        int idx = itens_ordenados[i].indice;
+        if (items[idx].peso <= cap_restante) {
+            resultado[idx] = 1.0f; // Pega o item inteiro
+            cap_restante -= items[idx].peso;
+        } else if (cap_restante > 0) {
+            resultado[idx] =
+                cap_restante / items[idx].peso; // Pega fração do item
+            cap_restante = 0;
+        }
+    }
+
+    free(itens_ordenados);
+    return valor_total;
+}
 int main(int argc, char *argv[]) {
     // Verificação do número de argumentos
     if (argc != 3) {
