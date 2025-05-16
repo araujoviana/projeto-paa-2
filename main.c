@@ -5,17 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum Fase { FLORESTA, RUINAS, MONTANHAS, TEMPLO };
+#include "tipos.h"
 
-enum Tipo { NORMAL, SOBREVIVENCIA, TECNOLOGICO, MAGICO };
-
-typedef struct {
-    char *nome;
-    float peso;
-    float preco;
-    enum Tipo tipo;
-} Item;
-
+// Protótipo de parsing de arquivo
 void ler_arquivo(FILE *fp, Item **items, enum Fase *fase) {
     char linha[256];
     int capacidade = 10;
@@ -100,11 +92,6 @@ int main(int argc, char *argv[]) {
     enum Fase fase;
 
     ler_arquivo(fp, &itens, &fase);
-
-    for (int i = 0; i < ...; i++) {
-        printf("Item: %s, Peso: %.2f, Preço: %.2f, Tipo: %d\n", itens[i].nome,
-               itens[i].peso, itens[i].preco, itens[i].tipo);
-    }
 
     fclose(fp); // Fecha o arquivo de entrada
 
