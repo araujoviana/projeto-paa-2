@@ -1,45 +1,16 @@
 // Matheus Gabriel Viana Araujo - 10420444
 // Beatriz Bellini Prado Garcia - 10419741
 
+// Referências --
+// https://www.geeksforgeeks.org/memmove-in-cc/ -- Informações sobre memmove
+// https://codingclutch.com/the-fractional-knapsack-problem-an-in-depth-guide/
+// -- Guia sobre o algoritmo da mochila fracionária
+// https://www.man7.org/linux/man-pages/man3/fseek.3.html -- Man page do fseek
+
+#include "estruturas.h" // Contém os enums, structs e protótipos usados
 #include <ctype.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-// Estruturas de dados e definições base
-
-typedef enum { NORMAL, MAGICO, SOBREVIVENCIA, TECNOLOGICO } TipoItem;
-
-typedef enum { FLORESTA, RUINAS, MONTANHAS, TEMPLO } Fase;
-
-// Regras especiais
-typedef enum {
-    MAGICOS_VALOR_DOBRADO,
-    TECNOLOGICOS_INTEIROS,
-    SOBREVIVENCIA_DESVALORIZADA,
-    TRES_MELHORES_VALOR_PESO
-} Regra;
-
-// Item das fases
-typedef struct {
-    char *nome;
-    float peso;
-    float preco;
-    TipoItem tipo;
-    float valor_por_peso;
-} Item;
-
-// Fase do jogo
-typedef struct {
-    char *nome;
-    float capacidade;
-    Regra regra;
-    Item *itens;
-    int num_itens;
-} FaseJogo;
-
-// Protótipo necessário
-void liberar_fase(FaseJogo *fase);
 
 // Funções para o algoritmo da mochila fracionária
 
