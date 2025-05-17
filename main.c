@@ -22,21 +22,24 @@ typedef enum {
 
 // Item das fases
 typedef struct {
-    char *nome;           
-    float peso;          
-    float preco;        
-    TipoItem tipo;        
-    float valor_por_peso; 
+    char *nome;
+    float peso;
+    float preco;
+    TipoItem tipo;
+    float valor_por_peso;
 } Item;
 
 // Fase do jogo
 typedef struct {
-    char *nome;      
-    float capacidade; 
-    Regra regra;      
-    Item *itens;      
-    int num_itens;    
+    char *nome;
+    float capacidade;
+    Regra regra;
+    Item *itens;
+    int num_itens;
 } FaseJogo;
+
+// Protótipo necessário
+void liberar_fase(FaseJogo *fase);
 
 // Funções para o algoritmo da mochila fracionária
 
@@ -141,6 +144,14 @@ void aplicar_regra_templo(Item *itens, int *n) {
                 itens[i] = itens[j];
                 itens[j] = temp;
             }
+        }
+    }
+
+    // Libera a memória dos itens que serão descartados
+    for (int i = 3; i < *n; i++) {
+        if (itens[i].nome != NULL) {
+            free(itens[i].nome);
+            itens[i].nome = NULL;
         }
     }
 
@@ -328,6 +339,12 @@ FaseJogo *ler_fase(FILE *arquivo, int *eof) {
         return NULL;
     }
 
+    // Inicializa os nomes dos itens como NULL para facilitar a limpeza em caso
+    // de erro
+    for (int i = 0; i < capacidade_itens; i++) {
+        fase->itens[i].nome = NULL;
+    }
+
     while (fgets(linha, sizeof(linha), arquivo)) {
         // Remove quebra de linha
         linha[strcspn(linha, "\r\n")] = 0;
@@ -391,13 +408,22 @@ FaseJogo *ler_fase(FILE *arquivo, int *eof) {
 
             // Verifica se precisa aumentar a capacidade do array de itens
             if (fase->num_itens >= capacidade_itens) {
-                capacidade_itens *= 2;
-                fase->itens = (Item *)realloc(fase->itens,
-                                              capacidade_itens * sizeof(Item));
-                if (fase->itens == NULL) {
+                int new_capacidade = capacidade_itens * 2;
+                Item *new_itens =
+                    (Item *)realloc(fase->itens, new_capacidade * sizeof(Item));
+                if (new_itens == NULL) {
                     printf("Erro ao realocar memória para itens\n");
-                    return fase;
+                    liberar_fase(fase);
+                    return NULL;
                 }
+                fase->itens = new_itens;
+
+                // Inicializa os novos espaços com NULL
+                for (int i = capacidade_itens; i < new_capacidade; i++) {
+                    fase->itens[i].nome = NULL;
+                }
+
+                capacidade_itens = new_capacidade;
             }
 
             // Adiciona o item ao array
