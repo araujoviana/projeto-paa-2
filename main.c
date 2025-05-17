@@ -6,9 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/*
-   Estruturas de dados e definições base
-*/
+// Estruturas de dados e definições base
 
 // Tipos de itens
 typedef enum { NORMAL, MAGICO, SOBREVIVENCIA, TECNOLOGICO } TipoItem;
@@ -24,7 +22,7 @@ typedef enum {
     TRES_MELHORES_VALOR_PESO
 } Regra;
 
-// Estrutura para representar um item
+// Item das fases
 typedef struct {
     char *nome;           // Nome do item
     float peso;           // Peso do item em kg
@@ -33,7 +31,7 @@ typedef struct {
     float valor_por_peso; // Valor por peso para ordenação
 } Item;
 
-// Estrutura para representar uma fase do jogo
+// Fase do jogo
 typedef struct {
     char *nome;       // Nome da fase
     float capacidade; // Capacidade da mochila em kg
@@ -42,9 +40,7 @@ typedef struct {
     int num_itens;    // Número de itens disponíveis
 } FaseJogo;
 
-/*
-   Funções para o algoritmo da mochila fracionária
-*/
+// Funções para o algoritmo da mochila fracionária
 
 /**
  * Implementa o algoritmo da mochila fracionária usando a estratégia gulosa.
@@ -55,10 +51,11 @@ typedef struct {
  * @param resultado Array para armazenar a fração de cada item escolhido (deve
  * ser pré-alocado)
  * @param tam_resultado Ponteiro para armazenar o número de itens escolhidos
+ * @param regra Regra especial da fase
  * @return Valor total obtido
  */
-float mochila_fracionaria_gulosa(Item *itens, int n, float capacidade,
-                                 float *resultado, int *tam_resultado) {
+float mochila_fracionaria(Item *itens, int n, float capacidade,
+                          float *resultado, int *tam_resultado, Regra regra) {
     // Inicializa o array de resultado com zeros
     for (int i = 0; i < n; i++) {
         resultado[i] = 0.0f;
@@ -90,7 +87,7 @@ float mochila_fracionaria_gulosa(Item *itens, int n, float capacidade,
     }
 
     float cap_restante = capacidade;
-    float valor_total = 0.0f;
+    float total = 0.0f;
     *tam_resultado = 0;
 
     // Escolhe os itens em ordem decrescente de valor/peso
@@ -98,7 +95,8 @@ float mochila_fracionaria_gulosa(Item *itens, int n, float capacidade,
         int idx = indices[i];
 
         // Para a fase de ruínas, itens tecnológicos não podem ser fracionados
-        if (itens[idx].tipo == TECNOLOGICO && itens[idx].peso > cap_restante) {
+        if (itens[idx].tipo == TECNOLOGICO && regra == TECNOLOGICOS_INTEIROS &&
+            itens[idx].peso > cap_restante) {
             continue; // Pula este item se for tecnológico e não couber inteiro
         }
 
@@ -106,189 +104,24 @@ float mochila_fracionaria_gulosa(Item *itens, int n, float capacidade,
             // Leva o item inteiro
             resultado[idx] = 1.0f;
             cap_restante -= itens[idx].peso;
-            valor_total += itens[idx].preco;
+            total += itens[idx].preco;
             (*tam_resultado)++;
         } else {
-            // Leva fração do item
-            resultado[idx] = cap_restante / itens[idx].peso;
-            valor_total += resultado[idx] * itens[idx].preco;
-            cap_restante = 0;
-            (*tam_resultado)++;
+            // Leva fração do item (apenas se não for tecnológico na fase de
+            // ruínas)
+            if (!(itens[idx].tipo == TECNOLOGICO &&
+                  regra == TECNOLOGICOS_INTEIROS)) {
+                resultado[idx] = cap_restante / itens[idx].peso;
+                total += resultado[idx] * itens[idx].preco;
+                cap_restante = 0;
+                (*tam_resultado)++;
+            }
         }
     }
 
     free(indices);
-    return valor_total;
+    return total;
 }
-
-/**
- * Implementa o algoritmo da mochila fracionária usando programação dinâmica
- * discretizada.
- *
- * @param itens Array de itens disponíveis
- * @param n Número de itens
- * @param capacidade Capacidade máxima da mochila
- * @param resultado Array para armazenar a fração de cada item escolhido (deve
- * ser pré-alocado)
- * @param tam_resultado Ponteiro para armazenar o número de itens escolhidos
- * @return Valor total obtido
- */
-float mochila_fracionaria_pd(Item *itens, int n, float capacidade,
-                             float *resultado, int *tam_resultado) {
-    if (itens == NULL || resultado == NULL || n <= 0 || capacidade <= 0) {
-        *tam_resultado = 0;
-        return 0.0f;
-    }
-
-    // Inicializa o array de resultado com zeros
-    for (int i = 0; i < n; i++) {
-        resultado[i] = 0.0f;
-    }
-
-    // Para o problema da mochila fracionária, a abordagem gulosa já é ótima
-    // Implementaremos uma versão baseada em PD para fins educacionais
-
-    // Precisão para discretização (2 casas decimais)
-    const int PRECISAO = 100;
-    int max_cap = (int)(capacidade * PRECISAO) + 1;
-
-    // Aloca e inicializa a tabela de programação dinâmica
-    float *dp = (float *)malloc(max_cap * sizeof(float));
-    if (dp == NULL) {
-        printf("Erro ao alocar memória para tabela de programação dinâmica\n");
-        *tam_resultado = 0;
-        return 0.0f;
-    }
-
-    // Inicializa a tabela com zeros
-    for (int i = 0; i < max_cap; i++) {
-        dp[i] = 0.0f;
-    }
-
-    // Cria estrutura para armazenar os itens com seus índices
-    typedef struct {
-        int idx;              // Índice original do item
-        float peso;           // Peso do item
-        float valor;          // Valor do item
-        TipoItem tipo;        // Tipo do item
-        float valor_por_peso; // Relação valor/peso
-    } ItemOrdenado;
-
-    // Copia os itens para um array temporário
-    ItemOrdenado *itens_ord = (ItemOrdenado *)malloc(n * sizeof(ItemOrdenado));
-    if (itens_ord == NULL) {
-        free(dp);
-        *tam_resultado = 0;
-        return 0.0f;
-    }
-
-    for (int i = 0; i < n; i++) {
-        itens_ord[i].idx = i;
-        itens_ord[i].peso = itens[i].peso;
-        itens_ord[i].valor = itens[i].preco;
-        itens_ord[i].tipo = itens[i].tipo;
-        itens_ord[i].valor_por_peso = itens[i].valor_por_peso;
-    }
-
-    // Ordena os itens por valor/peso decrescente
-    for (int i = 0; i < n - 1; i++) {
-        for (int j = i + 1; j < n; j++) {
-            if (itens_ord[i].valor_por_peso < itens_ord[j].valor_por_peso) {
-                ItemOrdenado temp = itens_ord[i];
-                itens_ord[i] = itens_ord[j];
-                itens_ord[j] = temp;
-            }
-        }
-    }
-
-    // Preenche a tabela de PD (versão discretizada)
-    for (int i = 0; i < n; i++) {
-        for (int w = max_cap - 1; w >= 0; w--) {
-            float cap_atual = (float)w / PRECISAO;
-
-            // Se o item atual é tecnológico e estamos na fase de ruínas,
-            // ele não pode ser fracionado
-            if (itens_ord[i].tipo == TECNOLOGICO) {
-                if (itens_ord[i].peso <= cap_atual) {
-                    int nova_cap =
-                        (int)((cap_atual - itens_ord[i].peso) * PRECISAO);
-                    float novo_valor = dp[nova_cap] + itens_ord[i].valor;
-
-                    if (novo_valor > dp[w]) {
-                        dp[w] = novo_valor;
-                    }
-                }
-            } else {
-                // Item pode ser fracionado
-                if (itens_ord[i].peso <= cap_atual) {
-                    // Leva o item inteiro
-                    int nova_cap =
-                        (int)((cap_atual - itens_ord[i].peso) * PRECISAO);
-                    float novo_valor = dp[nova_cap] + itens_ord[i].valor;
-
-                    if (novo_valor > dp[w]) {
-                        dp[w] = novo_valor;
-                    }
-                } else if (cap_atual > 0) {
-                    // Leva fração do item
-                    float fracao = cap_atual / itens_ord[i].peso;
-                    float valor_fracao = fracao * itens_ord[i].valor;
-
-                    if (valor_fracao > dp[w]) {
-                        dp[w] = valor_fracao;
-                    }
-                }
-            }
-        }
-    }
-
-    // Reconstrói a solução
-    float cap_restante = capacidade;
-    *tam_resultado = 0;
-
-    for (int i = 0; i < n && cap_restante > 0; i++) {
-        int idx = itens_ord[i].idx;
-
-        // Verifica se podemos adicionar este item
-        if (itens_ord[i].tipo == TECNOLOGICO) {
-            // Item tecnológico só pode ser adicionado inteiro
-            if (itens_ord[i].peso <= cap_restante) {
-                resultado[idx] = 1.0f;
-                cap_restante -= itens_ord[i].peso;
-                (*tam_resultado)++;
-            }
-        } else {
-            // Outros itens podem ser fracionados
-            if (itens_ord[i].peso <= cap_restante) {
-                resultado[idx] = 1.0f;
-                cap_restante -= itens_ord[i].peso;
-            } else {
-                resultado[idx] = cap_restante / itens_ord[i].peso;
-                cap_restante = 0;
-            }
-
-            if (resultado[idx] > 0) {
-                (*tam_resultado)++;
-            }
-        }
-    }
-
-    // Calcula o valor total obtido
-    float valor_total = 0.0f;
-    for (int i = 0; i < n; i++) {
-        valor_total += resultado[i] * itens[i].preco;
-    }
-
-    // Libera memória
-    free(itens_ord);
-    free(dp);
-
-    return valor_total;
-}
-
-/*
-   Funções para aplicar as regras especiais nas fases
-*/
 
 /**
  * Aplica a regra da Floresta Encantada: itens mágicos têm valor dobrado.
@@ -362,16 +195,23 @@ void escrever_resultado_fase(FILE *arquivo, FaseJogo *fase, float *resultado,
         printf("Regra aplicada: Itens mágicos com valor dobrado\n");
         break;
     case TECNOLOGICOS_INTEIROS:
-        fprintf(arquivo, "Regra aplicada: Itens tecnologicos não podem ser fracionados\n");
-        printf("Regra aplicada: Itens tecnologicos não podem ser fracionados\n");
+        fprintf(
+            arquivo,
+            "Regra aplicada: Itens tecnologicos não podem ser fracionados\n");
+        printf(
+            "Regra aplicada: Itens tecnologicos não podem ser fracionados\n");
         break;
     case SOBREVIVENCIA_DESVALORIZADA:
-        fprintf(arquivo, "Regra aplicada: Itens de sobrevivencia perdem 20%% do valor\n");
+        fprintf(
+            arquivo,
+            "Regra aplicada: Itens de sobrevivencia perdem 20%% do valor\n");
         printf("Regra aplicada: Itens de sobrevivencia perdem 20%% do valor\n");
         break;
     case TRES_MELHORES_VALOR_PESO:
-        fprintf(arquivo, "Regra aplicada: Apenas os tres itens com maior valor/peso\n");
-        printf("Regra aplicada: Apenas os tres itens com maior valor/peso\n");
+        fprintf(arquivo, "Regra aplicada: Apenas os tres itens com maior "
+                         "valor/peso podem ser escolhidos\n");
+        printf("Regra aplicada: Apenas os tres itens com maior valor/peso "
+               "podem ser escolhidos\n");
         break;
     }
 
@@ -382,15 +222,15 @@ void escrever_resultado_fase(FILE *arquivo, FaseJogo *fase, float *resultado,
                         fase->itens[i].nome, fase->itens[i].peso,
                         fase->itens[i].preco);
                 printf("Pegou (inteiro) %s (%.2fkg, R$ %.2f)\n",
-                        fase->itens[i].nome, fase->itens[i].peso,
-                        fase->itens[i].preco);
+                       fase->itens[i].nome, fase->itens[i].peso,
+                       fase->itens[i].preco);
             } else {
                 float peso_fracao = resultado[i] * fase->itens[i].peso;
                 float valor_fracao = resultado[i] * fase->itens[i].preco;
                 fprintf(arquivo, "Pegou (fracionado) %s (%.2fkg, R$ %.2f)\n",
                         fase->itens[i].nome, peso_fracao, valor_fracao);
                 printf("Pegou (fracionado) %s (%.2fkg, R$ %.2f)\n",
-                        fase->itens[i].nome, peso_fracao, valor_fracao);
+                       fase->itens[i].nome, peso_fracao, valor_fracao);
             }
         }
     }
@@ -399,11 +239,10 @@ void escrever_resultado_fase(FILE *arquivo, FaseJogo *fase, float *resultado,
     printf("Lucro da fase: R$ %.2f\n\n", valor_total);
 }
 
-
 /**
  * Processa uma fase do jogo aplicando o algoritmo adequado.
  */
-float processar_fase(FaseJogo *fase, FILE *arquivo, int usar_pd) {
+float processar_fase(FaseJogo *fase, FILE *arquivo) {
     // Aplica as regras específicas da fase
     switch (fase->regra) {
     case MAGICOS_VALOR_DOBRADO:
@@ -429,16 +268,10 @@ float processar_fase(FaseJogo *fase, FILE *arquivo, int usar_pd) {
     int tam_resultado = 0;
     float valor_total = 0.0f;
 
-    // Executa o algoritmo (PD ou guloso)
-    if (usar_pd) {
-        valor_total =
-            mochila_fracionaria_pd(fase->itens, fase->num_itens,
-                                   fase->capacidade, resultado, &tam_resultado);
-    } else {
-        valor_total = mochila_fracionaria_gulosa(fase->itens, fase->num_itens,
-                                                 fase->capacidade, resultado,
-                                                 &tam_resultado);
-    }
+    // Executa o algoritmo guloso
+    valor_total =
+        mochila_fracionaria(fase->itens, fase->num_itens, fase->capacidade,
+                            resultado, &tam_resultado, fase->regra);
 
     // Escreve os resultados no arquivo
     escrever_resultado_fase(arquivo, fase, resultado, valor_total);
@@ -446,10 +279,6 @@ float processar_fase(FaseJogo *fase, FILE *arquivo, int usar_pd) {
     free(resultado);
     return valor_total;
 }
-
-/*
-   Funções para leitura e processamento de arquivos
-*/
 
 /**
  * Converte uma string para TipoItem.
@@ -681,8 +510,8 @@ int main(int argc, char *argv[]) {
     while (!eof) {
         FaseJogo *fase = ler_fase(arquivo_entrada, &eof);
         if (fase != NULL && fase->nome != NULL) {
-            // Processa a fase usando o algoritmo de PD
-            float lucro_fase = processar_fase(fase, arquivo_saida, 1);
+            // Processa a fase usando o algoritmo guloso
+            float lucro_fase = processar_fase(fase, arquivo_saida);
             lucro_total += lucro_fase;
 
             // Libera a memória da fase
