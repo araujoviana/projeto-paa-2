@@ -9,7 +9,8 @@ ITEM: Pedaço de Madeira, 3.0, 60, normal
 FASE: Ruinas Perdidas
 CAPACIDADE: 4.0
 REGRA: TECNOLOGICOS_INTEIROS
-ITEM: Gerador Antigo, 2.5, 300, tecnologicoITEM: Sensor de Movimento, 1.0, 120,
+ITEM: Gerador Antigo, 2.5, 300, tecnologico
+ITEM: Sensor de Movimento, 1.0, 120, tecnologico
 ITEM: Cabo de Energia, 1.0, 40, normal
 ITEM: Manual de Operacao, 0.5, 60, normal
 
