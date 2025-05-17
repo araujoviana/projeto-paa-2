@@ -8,10 +8,8 @@
 
 // Estruturas de dados e definições base
 
-// Tipos de itens
 typedef enum { NORMAL, MAGICO, SOBREVIVENCIA, TECNOLOGICO } TipoItem;
 
-// Fases do jogo
 typedef enum { FLORESTA, RUINAS, MONTANHAS, TEMPLO } Fase;
 
 // Regras especiais
@@ -24,36 +22,24 @@ typedef enum {
 
 // Item das fases
 typedef struct {
-    char *nome;           // Nome do item
-    float peso;           // Peso do item em kg
-    float preco;          // Preço do item em R$
-    TipoItem tipo;        // Tipo do item
-    float valor_por_peso; // Valor por peso para ordenação
+    char *nome;           
+    float peso;          
+    float preco;        
+    TipoItem tipo;        
+    float valor_por_peso; 
 } Item;
 
 // Fase do jogo
 typedef struct {
-    char *nome;       // Nome da fase
-    float capacidade; // Capacidade da mochila em kg
-    Regra regra;      // Regra especial da fase
-    Item *itens;      // Array de itens disponíveis
-    int num_itens;    // Número de itens disponíveis
+    char *nome;      
+    float capacidade; 
+    Regra regra;      
+    Item *itens;      
+    int num_itens;    
 } FaseJogo;
 
 // Funções para o algoritmo da mochila fracionária
 
-/**
- * Implementa o algoritmo da mochila fracionária usando a estratégia gulosa.
- *
- * @param itens Array de itens disponíveis
- * @param n Número de itens
- * @param capacidade Capacidade máxima da mochila
- * @param resultado Array para armazenar a fração de cada item escolhido (deve
- * ser pré-alocado)
- * @param tam_resultado Ponteiro para armazenar o número de itens escolhidos
- * @param regra Regra especial da fase
- * @return Valor total obtido
- */
 float mochila_fracionaria(Item *itens, int n, float capacidade,
                           float *resultado, int *tam_resultado, Regra regra) {
     // Inicializa o array de resultado com zeros
@@ -123,9 +109,6 @@ float mochila_fracionaria(Item *itens, int n, float capacidade,
     return total;
 }
 
-/**
- * Aplica a regra da Floresta Encantada: itens mágicos têm valor dobrado.
- */
 void aplicar_regra_floresta(Item *itens, int n) {
     for (int i = 0; i < n; i++) {
         if (itens[i].tipo == MAGICO) {
@@ -136,10 +119,6 @@ void aplicar_regra_floresta(Item *itens, int n) {
     }
 }
 
-/**
- * Aplica a regra das Montanhas Geladas: itens de sobrevivência perdem 20% do
- * valor.
- */
 void aplicar_regra_montanhas(Item *itens, int n) {
     for (int i = 0; i < n; i++) {
         if (itens[i].tipo == SOBREVIVENCIA) {
@@ -150,10 +129,6 @@ void aplicar_regra_montanhas(Item *itens, int n) {
     }
 }
 
-/**
- * Aplica a regra do Templo Subterrâneo: apenas os três itens com maior
- * valor/peso.
- */
 void aplicar_regra_templo(Item *itens, int *n) {
     if (*n <= 3)
         return; // Não precisa filtrar se já temos 3 ou menos itens
@@ -172,10 +147,6 @@ void aplicar_regra_templo(Item *itens, int *n) {
     // Mantém apenas os três melhores
     *n = 3;
 }
-
-/*
-   Funções para processamento de fases e resultados
-*/
 
 /**
  * Escreve os resultados no terminal e no arquivo de saída.
@@ -239,9 +210,6 @@ void escrever_resultado_fase(FILE *arquivo, FaseJogo *fase, float *resultado,
     printf("Lucro da fase: R$ %.2f\n\n", valor_total);
 }
 
-/**
- * Processa uma fase do jogo aplicando o algoritmo adequado.
- */
 float processar_fase(FaseJogo *fase, FILE *arquivo) {
     // Aplica as regras específicas da fase
     switch (fase->regra) {
@@ -280,9 +248,6 @@ float processar_fase(FaseJogo *fase, FILE *arquivo) {
     return valor_total;
 }
 
-/**
- * Converte uma string para TipoItem.
- */
 TipoItem str_to_tipo_item(const char *str) {
     if (strcmp(str, "magico") == 0) {
         return MAGICO;
@@ -295,9 +260,6 @@ TipoItem str_to_tipo_item(const char *str) {
     }
 }
 
-/**
- * Converte uma string para Regra.
- */
 Regra str_to_regra(const char *str) {
     if (strcmp(str, "MAGICOS_VALOR_DOBRADO") == 0) {
         return MAGICOS_VALOR_DOBRADO;
@@ -476,9 +438,6 @@ void liberar_fase(FaseJogo *fase) {
     free(fase);
 }
 
-/**
- * Função principal do programa.
- */
 int main(int argc, char *argv[]) {
     // Verificação do número de argumentos
     if (argc != 3) {
@@ -488,14 +447,12 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Abre o arquivo de entrada
     FILE *arquivo_entrada = fopen(argv[1], "r");
     if (arquivo_entrada == NULL) {
         printf("Erro ao abrir o arquivo de entrada: %s\n", argv[1]);
         return 1;
     }
 
-    // Abre o arquivo de saída
     FILE *arquivo_saida = fopen(argv[2], "w");
     if (arquivo_saida == NULL) {
         printf("Erro ao abrir o arquivo de saída: %s\n", argv[2]);
