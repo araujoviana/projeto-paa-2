@@ -345,55 +345,60 @@ void aplicar_regra_templo(Item *itens, int *n) {
 */
 
 /**
- * Escreve os resultados da fase no arquivo de saída.
+ * Escreve os resultados no terminal e no arquivo de saída.
  */
+
 void escrever_resultado_fase(FILE *arquivo, FaseJogo *fase, float *resultado,
                              float valor_total) {
     fprintf(arquivo, "--- FASE: %s ---\n", fase->nome);
-    fprintf(arquivo, "Capacidade da mochila: %.2f kg\n", fase->capacidade);
+    printf("--- FASE: %s ---\n", fase->nome);
 
-    // Escreve a regra aplicada
+    fprintf(arquivo, "Capacidade da mochila: %.2f kg\n", fase->capacidade);
+    printf("Capacidade da mochila: %.2f kg\n", fase->capacidade);
+
     switch (fase->regra) {
     case MAGICOS_VALOR_DOBRADO:
         fprintf(arquivo, "Regra aplicada: Itens mágicos com valor dobrado\n");
+        printf("Regra aplicada: Itens mágicos com valor dobrado\n");
         break;
     case TECNOLOGICOS_INTEIROS:
-        fprintf(
-            arquivo,
-            "Regra aplicada: Itens tecnologicos não podem ser fracionados\n");
+        fprintf(arquivo, "Regra aplicada: Itens tecnologicos não podem ser fracionados\n");
+        printf("Regra aplicada: Itens tecnologicos não podem ser fracionados\n");
         break;
     case SOBREVIVENCIA_DESVALORIZADA:
-        fprintf(
-            arquivo,
-            "Regra aplicada: Itens de sobrevivencia perdem 20%% do valor\n");
+        fprintf(arquivo, "Regra aplicada: Itens de sobrevivencia perdem 20%% do valor\n");
+        printf("Regra aplicada: Itens de sobrevivencia perdem 20%% do valor\n");
         break;
     case TRES_MELHORES_VALOR_PESO:
-        fprintf(arquivo,
-                "Regra aplicada: Apenas os tres itens com maior valor/peso\n");
+        fprintf(arquivo, "Regra aplicada: Apenas os tres itens com maior valor/peso\n");
+        printf("Regra aplicada: Apenas os tres itens com maior valor/peso\n");
         break;
     }
 
-    // Escreve os itens escolhidos
     for (int i = 0; i < fase->num_itens; i++) {
-        if (resultado[i] >
-            0.0001) { // Considera apenas os itens realmente escolhidos
+        if (resultado[i] > 0.0001) {
             if (resultado[i] >= 0.999) {
-                // Item inteiro
                 fprintf(arquivo, "Pegou (inteiro) %s (%.2fkg, R$ %.2f)\n",
                         fase->itens[i].nome, fase->itens[i].peso,
                         fase->itens[i].preco);
+                printf("Pegou (inteiro) %s (%.2fkg, R$ %.2f)\n",
+                        fase->itens[i].nome, fase->itens[i].peso,
+                        fase->itens[i].preco);
             } else {
-                // Item fracionado
                 float peso_fracao = resultado[i] * fase->itens[i].peso;
                 float valor_fracao = resultado[i] * fase->itens[i].preco;
                 fprintf(arquivo, "Pegou (fracionado) %s (%.2fkg, R$ %.2f)\n",
+                        fase->itens[i].nome, peso_fracao, valor_fracao);
+                printf("Pegou (fracionado) %s (%.2fkg, R$ %.2f)\n",
                         fase->itens[i].nome, peso_fracao, valor_fracao);
             }
         }
     }
 
     fprintf(arquivo, "Lucro da fase: R$ %.2f\n\n", valor_total);
+    printf("Lucro da fase: R$ %.2f\n\n", valor_total);
 }
+
 
 /**
  * Processa uma fase do jogo aplicando o algoritmo adequado.
