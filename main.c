@@ -6,11 +6,14 @@
 // https://codingclutch.com/the-fractional-knapsack-problem-an-in-depth-guide/
 // -- Guia sobre o algoritmo da mochila fracionária
 // https://www.man7.org/linux/man-pages/man3/fseek.3.html -- Man page do fseek
+// https://stackoverflow.com/questions/26284110/strdup-confused-about-warnings-implicit-declaration-makes-pointer-with#26284172
+// -- Uso do strdup com -std=c99
 
 #include "estruturas.h" // Contém os enums, structs e protótipos usados
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+// #include <stdio.h> já está incluido no estruturas.h
 
 // Funções para o algoritmo da mochila fracionária
 
